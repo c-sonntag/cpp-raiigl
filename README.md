@@ -1,4 +1,4 @@
-# raiigl
+# raiigl - opengl-wrapper
 
 For C++14
 
