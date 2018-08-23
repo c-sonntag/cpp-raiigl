@@ -13,29 +13,31 @@ namespace raiigl {
   struct uniform_variable_multiple : public classes::non_copyable
   {
    public:
+    struct vector_of_uniform_locations : public std::vector<GLint>
+    {
+      void do_fill_uniform_locations( const std::string & name, const raiigl::program & program )
+      { emplace_back( program.get_uniform_location( name ) ); }
+
+      template<typename ... Args>
+      void do_fill_uniform_locations( const std::string & name, const raiigl::program & program, const Args & ... programs )
+      { emplace_back( program.get_uniform_location( name ) ); do_fill_uniform_locations( name, programs... ); }
+
+      template<typename ... Args>
+      vector_of_uniform_locations( const std::string & name, const Args & ... programs ) {
+        reserve( sizeof...( Args ) );
+        do_fill_uniform_locations( name, programs... );
+      }
+    };
+
+   public:
     const std::string name;
-    const std::vector<GLint> ids;
-
-   private:
-    std::vector<GLint> do_fill_uniform_locations( std::vector<GLint> & ids, const raiigl::program & program )
-    { ids.emplace_back( program.get_uniform_location( name ) ); }
-
-    template<typename ... Args>
-    std::vector<GLint> do_fill_uniform_locations( std::vector<GLint> & ids, const raiigl::program & program, const Args & ... programs )
-    { ids.emplace_back( program.get_uniform_location( name ) ); do_fill_uniform_locations( ids, programs... ); }
-
-    template<typename ... Args>
-    std::vector<GLint> get_uniform_locations( const Args & ... programs ) {
-      std::vector<GLint> ids;
-      ids.reserve( sizeof( Args )... );
-      do_fill_uniform_locations( ids, programs... );
-    }
+    const vector_of_uniform_locations ids;
 
    public:
     template<typename ... Args>
-    uniform_variable_multiple( const std::string & _name, const Args & ... programs ) :
-      name( _name ),
-      ids( get_uniform_locations( programs... ) )
+    uniform_variable_multiple( const std::string _name, const Args & ... programs ) :
+      name( std::move( _name ) ),
+      ids( name, programs... )
     {}
 
    public:
@@ -48,14 +50,14 @@ namespace raiigl {
   // ---- ---- ---- ----
 
   template<typename TUniformType>
-  struct uniform_variable_multiple_stored : public uniform_variable_multiple
+  struct uniform_variable_stored_multiple : public uniform_variable_multiple
   {
    public:
     TUniformType var;
 
    public:
     template<typename ... Args>
-    uniform_variable_multiple_stored( const std::string & _name, TUniformType initial_value, const Args & ... programs ) :
+    uniform_variable_stored_multiple( const std::string & _name, TUniformType initial_value, const Args & ... programs ) :
       uniform_variable_multiple( _name, programs... ),
       var( initial_value )
     {}
@@ -68,7 +70,7 @@ namespace raiigl {
     __forceinline void dec() { --var; send(); }
 
    public:
-    using TOp = uniform_variable_multiple_stored<TUniformType>;
+    using TOp = uniform_variable_stored_multiple<TUniformType>;
     TOp & operator=( TUniformType v ) { var = v; send(); return *this; }
     TOp & operator+=( TUniformType v ) { var += v; send(); return *this; }
     TOp & operator-=( TUniformType v ) { var -= v; send(); return *this; }
