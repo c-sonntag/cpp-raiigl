@@ -86,6 +86,9 @@ namespace raiigl {
     __forceinline void bind() const
     { glBindBuffer( static_cast<GLenum>( type ), id ); }
 
+    __forceinline void unbind() const
+    { glBindBuffer( static_cast<GLenum>( type ), 0 ); }
+
    public:
     void send( const size_t size, const GLvoid * const data ) const  {
       glBufferData(

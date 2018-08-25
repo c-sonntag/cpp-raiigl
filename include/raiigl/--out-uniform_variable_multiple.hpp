@@ -8,6 +8,16 @@
 #include <type_traits>
 #include <vector>
 
+/**
+ * In wainting of real use
+ * Need https://www.khronos.org/opengl/wiki/GLAPI/glProgramUniform 
+ *   Or ARB_separate_shader_objects 
+ *   to impl for multiple program
+ * More about https://www.khronos.org/opengl/wiki/GLSL_:_common_mistakes#glUseProgram
+ * And other https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glProgramUniform.xhtml
+ */
+
+
 namespace raiigl {
 
   struct uniform_variable_multiple : public classes::non_copyable
