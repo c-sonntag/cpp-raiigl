@@ -34,7 +34,7 @@ namespace raiigl {
     __forceinline ~shader()
     { glDeleteShader( id ); }
 
-   private:
+   public:
     raiigl_classes_non_copyable_movable( shader )
 
    private:

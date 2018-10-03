@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include <string>
+#include <vector>
 #include <istream>
 #include <stdexcept>
 
@@ -39,6 +40,14 @@ namespace raiigl {
 
    private:
     void link_program();
+
+   public:
+    __forceinline program( const std::vector<raiigl::shader *> shaders_p ) :
+      id( glCreateProgram() ) {
+      for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
+      link_program();
+      for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
+    }
 
    public:
     template<typename... Args>
@@ -93,7 +102,7 @@ namespace raiigl {
     static __forceinline void set_uniform_value( const GLint id, const int v )    { glUniform1i( id, v ); }
     static __forceinline void set_uniform_value( const GLint id, const uint v )   { glUniform1ui( id, v ); }
 
-    static __forceinline void set_uniform_value( const GLint id, const textures_num num ) { glUniform1i( id, static_cast<int>( num ) - static_cast<int>( textures_num::Texture0 ) ); }
+    static __forceinline void set_uniform_value( const GLint id, const textures_num num ) { glUniform1i( id, static_cast<int>( num ) - static_cast<int>( textures_num::Texture00 ) ); }
 
     static __forceinline void set_uniform_value( const GLint id, const glm::vec2 & v )   { glUniform2fv( id, 1, &v[0] ); }
     static __forceinline void set_uniform_value( const GLint id, const glm::vec3 & v )   { glUniform3fv( id, 1, &v[0] ); }

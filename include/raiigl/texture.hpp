@@ -205,7 +205,7 @@ namespace raiigl {
     __forceinline void send_image2d( const GLint level, const internal_format_type internalformat, const uint width, uint height, const pixel_format format, pixel_type pixel, const GLvoid * const data, const uint border = 0 ) const
     { send_image2d( static_cast<texture_image2d_type>( base_type ), level, internalformat, width, height, format, pixel, data, border ); }
 
-   public:
+   protected:
     __forceinline void set_param( const GLenum pname, GLint param ) const
     { glTexParameteri( static_cast<GLenum>( base_type ), pname, param ); }
 
@@ -235,6 +235,12 @@ namespace raiigl {
     __forceinline void set_param_wrap( const wrap_type str = wrap_type::Repeat ) const
     { set_param_wrap_str( str, str, str ); }
 
+   public:
+    __forceinline void bind_on_texture( const raiigl::textures_num num ) const {
+      glActiveTexture( static_cast<GLenum>( num ) );
+      bind();
+      glActiveTexture( 0 );
+    }
 
   };
 

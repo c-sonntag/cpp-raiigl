@@ -9,6 +9,8 @@ cmake_minimum_required(VERSION 3.2)
 #
 set(RAIIGL_VERSION_MAJOR 1)
 set(RAIIGL_VERSION_MINOR 0)
+set(PROJECT_RAIIGL_STATIC "${PROJECT_NAME}_static")
+set(PROJECT_RAIIGL_SHARED "${PROJECT_NAME}_shared")
 
 #
 ##
@@ -64,6 +66,7 @@ add_definitions(${GLM_DEFINITIONS})
 #
 
 # --- TARGETS PATH ---
+set(CPP_PATH "src")
 set(HEADER_PATH "include")
 set(HEADER_SUBPATH "${HEADER_PATH}/raiigl")
 set(IPP_PATH "${HEADER_SUBPATH}/ipp")
@@ -71,6 +74,7 @@ set(IPP_PATH "${HEADER_SUBPATH}/ipp")
 # --- TARGETS FILES ---
 file(GLOB_RECURSE TARGET_HEADER_FILES "${HEADER_PATH}/*.h" "${HEADER_PATH}/*.hpp")
 file(GLOB_RECURSE TARGET_IPP_FILES "${IPP_PATH}/*.ipp")
+file(GLOB_RECURSE TARGET_CPP_FILES "${CPP_PATH}/*.c" "${CPP_PATH}/*.cpp")
 
 # --- COMPILE OPTIONS ---
 include_directories(${HEADER_PATH})
@@ -79,41 +83,93 @@ include_directories(${HEADER_PATH})
 ##
 #
 
+# --- BUILD OPTIONS : STATIC/SHARED ---
+SET(RAIIGL_SHARED ON CACHE BOOL "Build shared RAIIGL library")
+SET(RAIIGL_STATIC ON CACHE BOOL "Build static RAIIGL library")
+
+# --- CHECK BUILD OPTIONS ---
+if( (NOT ${RAIIGL_SHARED}) AND (NOT ${RAIIGL_STATIC}) )
+  message(FATAL_ERROR, "\n\n   !! Require one of SHARED or STATIC for RAIIGL !! \n\n")
+  set(RAIIGL_FOUND OFF)
+  return()
+endif()
+
+
+#
+##
+#
+
 # --- BUILD OPTIONS  ---
-SET(RAIIGL_BUILD_TOOLS ON CACHE BOOL "Build tools for RAIIGL library")
-SET(RAIIGL_BUILD_EXAMPLES ON CACHE BOOL "Build examples for RAIIGL library")
-SET(RAIIGL_BUILD_TESTS ON CACHE BOOL "Build tests for RAIIGL library")
+## set(RAIIGL_BUILD_TOOLS    ON CACHE BOOL "Build tools for RAIIGL library")
+## set(RAIIGL_BUILD_TESTS    ON CACHE BOOL "Build tests for RAIIGL library")
+set(RAIIGL_BUILD_EXAMPLES ON CACHE BOOL "Build examples for RAIIGL library")
 
+# --- SUB BUILD LINKING ---
+set(PROJECT_SUBPROJECT_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/${HEADER_PATH}")
+if(RAIIGL_STATIC)
+  set(PROJECT_SUBPROJECT_LINKING ${PROJECT_RAIIGL_STATIC})
+elseif(RAIIGL_SHARED)
+  set(PROJECT_SUBPROJECT_LINKING ${PROJECT_RAIIGL_SHARED})
+endif()
 
 #
 ##
 #
 
-add_library(${PROJECT_NAME} STATIC "just-hello.cpp" ${TARGET_HEADER_FILES} ${TARGET_IPP_FILES})
+# --- BUILDS LIB TARGET STATIC ---
+if(${RAIIGL_STATIC})
 
-#
-##
-#
+  # --- ---
+  add_library(${PROJECT_RAIIGL_STATIC} STATIC ${TARGET_CPP_FILES} ${TARGET_HEADER_FILES})
+  set_target_properties(${PROJECT_RAIIGL_STATIC} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+
+  # --- INSTALL LIB ---
+  install(TARGETS ${PROJECT_RAIIGL_STATIC}
+          LIBRARY DESTINATION "lib"
+          ARCHIVE DESTINATION "lib")
+
+endif()
+
+# --- BUILDS LIB TARGET SHARED ---
+if(${RAIIGL_SHARED})
+
+  # --- ---
+  add_library(${PROJECT_RAIIGL_SHARED} SHARED ${TARGET_CPP_FILES} ${TARGET_HEADER_FILES})
+  set_target_properties(${PROJECT_RAIIGL_SHARED} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+
+  # --- INSTALL LIB ---
+  install(TARGETS ${PROJECT_RAIIGL_SHARED}
+          RUNTIME DESTINATION "bin"
+          LIBRARY DESTINATION "lib"
+          ARCHIVE DESTINATION "lib")
+
+endif()
 
 # --- INSTALL INCLUDE ---
 install(DIRECTORY "${HEADER_PATH}/." DESTINATION "include")
 
 #
+## Subproject
+#
+
+set(PROJECT_RAIIGL_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/${HEADER_PATH}")
+
+
+#
 ##
 #
 
-## --- BUILDS TOOLS ---
-#if(${RAIIGL_BUILD_TOOLS})
-# add_subdirectory("tools/")
-#endif()
-#
-## --- BUILDS EXAMPLES ---
-#if(${RAIIGL_BUILD_EXAMPLES})
-# add_subdirectory("examples/")
-#endif()
-#
-## --- BUILDS TESTS ---
-#if(${RAIIGL_BUILD_TESTS})
-#    add_subdirectory("tests/")
-#endif()
+# # --- BUILDS TOOLS  ---
+# if(${RAIIGL_BUILD_TOOLS})
+#   ##add_subdirectory("tools/")
+# endif()
 
+# # --- BUILDS EXAMPLES ---
+# if(${RAIIGL_BUILD_EXAMPLES})
+#  add_subdirectory("examples/")
+# endif()
+
+# # --- BUILDS TESTS ---
+# if(${RAIIGL_BUILD_TESTS} AND EXISTS ${ERC_BINARY_PACKAGER})
+#   add_subdirectory("tests/")
+# endif()

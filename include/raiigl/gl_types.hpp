@@ -73,16 +73,16 @@ namespace raiigl {
 
   enum class textures_num : GLenum
   {
-    Texture0  = GL_TEXTURE0,  Texture11 = GL_TEXTURE11,  Texture22 = GL_TEXTURE22,
-    Texture1  = GL_TEXTURE1,  Texture12 = GL_TEXTURE12,  Texture23 = GL_TEXTURE23,
-    Texture2  = GL_TEXTURE2,  Texture13 = GL_TEXTURE13,  Texture24 = GL_TEXTURE24,
-    Texture3  = GL_TEXTURE3,  Texture14 = GL_TEXTURE14,  Texture25 = GL_TEXTURE25,
-    Texture4  = GL_TEXTURE4,  Texture15 = GL_TEXTURE15,  Texture26 = GL_TEXTURE26,
-    Texture5  = GL_TEXTURE5,  Texture16 = GL_TEXTURE16,  Texture27 = GL_TEXTURE27,
-    Texture6  = GL_TEXTURE6,  Texture17 = GL_TEXTURE17,  Texture28 = GL_TEXTURE28,
-    Texture7  = GL_TEXTURE7,  Texture18 = GL_TEXTURE18,  Texture29 = GL_TEXTURE29,
-    Texture8  = GL_TEXTURE8,  Texture19 = GL_TEXTURE19,  Texture30 = GL_TEXTURE30,
-    Texture9  = GL_TEXTURE9,  Texture20 = GL_TEXTURE20,  Texture31 = GL_TEXTURE31,
+    Texture00 = GL_TEXTURE0,  Texture11 = GL_TEXTURE11,  Texture22 = GL_TEXTURE22,
+    Texture01 = GL_TEXTURE1,  Texture12 = GL_TEXTURE12,  Texture23 = GL_TEXTURE23,
+    Texture02 = GL_TEXTURE2,  Texture13 = GL_TEXTURE13,  Texture24 = GL_TEXTURE24,
+    Texture03 = GL_TEXTURE3,  Texture14 = GL_TEXTURE14,  Texture25 = GL_TEXTURE25,
+    Texture04 = GL_TEXTURE4,  Texture15 = GL_TEXTURE15,  Texture26 = GL_TEXTURE26,
+    Texture05 = GL_TEXTURE5,  Texture16 = GL_TEXTURE16,  Texture27 = GL_TEXTURE27,
+    Texture06 = GL_TEXTURE6,  Texture17 = GL_TEXTURE17,  Texture28 = GL_TEXTURE28,
+    Texture07 = GL_TEXTURE7,  Texture18 = GL_TEXTURE18,  Texture29 = GL_TEXTURE29,
+    Texture08 = GL_TEXTURE8,  Texture19 = GL_TEXTURE19,  Texture30 = GL_TEXTURE30,
+    Texture09 = GL_TEXTURE9,  Texture20 = GL_TEXTURE20,  Texture31 = GL_TEXTURE31,
     Texture10 = GL_TEXTURE10, Texture21 = GL_TEXTURE21,
   };
 }

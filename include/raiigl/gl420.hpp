@@ -16,11 +16,13 @@ namespace raiigl {
       {}
     };
 
-    __forceinline void draw_arrays_instanced_base_instance( const primitive_type mode, const GLint first, const GLsizei count, const GLsizei primcount, const GLuint baseinstance ) const
-    { glDrawArraysInstancedBaseInstance( static_cast<GLenum>( mode ), first, count, primcount, baseinstance ); }
+    static constexpr __forceinline void check_compatibility() { raiigl_glew_throw_check( GLEW_VERSION_4_2 ); }
+
+    __forceinline void draw_arrays_instanced_base_instance( const primitive_type mode, const GLuint first, const GLuint count, const GLuint primcount, const GLuint baseinstance ) const
+    { glDrawArraysInstancedBaseInstance( static_cast<GLenum>( mode ), static_cast<GLint>( first ), static_cast<GLsizei>( count ), static_cast<GLsizei>( primcount ), baseinstance ); }
 
     __forceinline void draw_arrays_instanced_base_instance( const primitive_type mode, const draw_arrays_indirect_command & cmd ) const
-    { glDrawArraysInstancedBaseInstance( static_cast<GLenum>( mode ), cmd.first, cmd.count, cmd.prim_count, cmd.base_instance ); }
+    { glDrawArraysInstancedBaseInstance( static_cast<GLenum>( mode ), static_cast<GLint>( cmd.first ),  static_cast<GLsizei>( cmd.count ), static_cast<GLsizei>( cmd.prim_count ), cmd.base_instance ); }
 
   };
 

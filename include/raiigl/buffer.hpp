@@ -4,6 +4,10 @@
 
 #include <GL/glew.h>
 
+#include <vector>
+#include <array>
+#include <unordered_set>
+
 namespace raiigl {
 
   enum class buffer_type : GLenum
@@ -54,8 +58,21 @@ namespace raiigl {
     DynamicCopy = GL_DYNAMIC_COPY
   };
 
+  enum class buffer_mode
+  {
+    ReadOnly = GL_READ_ONLY,
+    WriteOnly = GL_WRITE_ONLY,
+    ReadWrite = GL_READ_WRITE,
+  };
+
+  // ---- ---- ---- ----
+
   struct buffer : public classes::non_copyable
   {
+   public:
+    static std::unordered_set<buffer_type> binded_buffer_type;
+    static void unbind_all_binded_buffer_type();
+
    public:
     const buffer_type type;
     const buffer_usage usage;
@@ -84,25 +101,70 @@ namespace raiigl {
 
    public:
     __forceinline void bind() const
-    { glBindBuffer( static_cast<GLenum>( type ), id ); }
+    { glBindBuffer( static_cast<GLenum>( type ), id ); binded_buffer_type.insert( type ); }
 
     __forceinline void unbind() const
-    { glBindBuffer( static_cast<GLenum>( type ), 0 ); }
+    { glBindBuffer( static_cast<GLenum>( type ), 0 ); binded_buffer_type.erase( type ); }
 
    public:
-    void send( const size_t size, const GLvoid * const data ) const  {
+    void send( const size_t byte_size, const GLvoid * const data ) const  {
       glBufferData(
         static_cast<GLenum>( type ),
-        static_cast<GLsizeiptr>( size ),
+        static_cast<GLsizeiptr>( byte_size ),
         data,
         static_cast<GLenum>( usage )
       );
     }
 
-    __forceinline void bind_and_send( const size_t size, const GLvoid * const data ) const {
-      bind();
-      send( size, data );
+    void update( const size_t byte_size, const GLvoid * const data, const size_t offset = 0 ) const  {
+      glBufferSubData(
+        static_cast<GLenum>( type ),
+        GLintptr( offset ),
+        static_cast<GLsizeiptr>( byte_size ),
+        data
+      );
     }
+
+   public:
+    template<typename TData> __forceinline void send( const TData & data )
+    { send( sizeof( TData ), &data ); }
+
+    template<typename TType> __forceinline void send( const std::vector<TType> & vec ) const
+    { send( vec.size() * sizeof( TType ), vec.data() ); }
+
+    template<typename TType, std::size_t TSize> __forceinline void send( const std::array<TType, TSize> & arr ) const
+    { send( TSize * sizeof( TType ), arr.data() ); }
+
+    template<typename TType, std::size_t TSize> __forceinline void send( const TType( &carray )[TSize] ) const
+    { send( TSize * sizeof( TType ), carray ); }
+
+   public:
+    template<typename TData> __forceinline void update( const TData & data, const size_t offset = 0 )
+    { update( sizeof( TData ), &data, offset ); }
+
+    template<typename TType> __forceinline void update( const std::vector<TType> & vec, const size_t offset = 0 ) const
+    { update( vec.size() * sizeof( TType ), vec.data(), offset ); }
+
+    template<typename TType, std::size_t TSize> __forceinline void update( const std::array<TType, TSize> & arr, const size_t offset = 0 ) const
+    { update( TSize * sizeof( TType ), arr.data(), offset ); }
+
+    template<typename TType, std::size_t TSize> __forceinline void update( const TType( &carray )[TSize], const size_t offset = 0 ) const
+    { update( TSize * sizeof( TType ), carray, offset ); }
+
+   public:
+    __forceinline void bind_and_send( const size_t byte_size, const GLvoid * const data ) const                                 { bind(); send( byte_size, data ); }
+    template<typename TData> __forceinline void bind_and_send( const TData & data, const size_t offset = 0 )                    { bind(); send( data ); }
+    template<typename TType> __forceinline void bind_and_send( const std::vector<TType> & vec ) const                           { bind(); send( vec ); }
+    template<typename TType, std::size_t TSize> __forceinline void bind_and_send( const std::array<TType, TSize> & arr ) const  { bind(); send( arr ); }
+    template<typename TType, std::size_t TSize> __forceinline void bind_and_send( const TType( &carray )[TSize] ) const         { bind(); send( carray ); }
+
+   public:
+    __forceinline void bind_and_update( const size_t byte_size, const GLvoid * const data, const size_t offset = 0 ) const                                  { bind(); update( byte_size, data, offset ); }
+    template<typename TData> __forceinline void bind_and_update( const TData & data, const size_t offset = 0 )                                              { bind(); update( data, offset ); }
+    template<typename TType> __forceinline void bind_and_update( const std::vector<TType> & vec, const size_t offset = 0 ) const                            { bind(); update( vec, offset ); }
+    template<typename TType, std::size_t TSize> __forceinline void bind_and_update( const std::array<TType, TSize> & arr, const size_t offset = 0 ) const   { bind(); update( arr, offset ); }
+    template<typename TType, std::size_t TSize> __forceinline void bind_and_update( const TType( &carray )[TSize], const size_t offset = 0 ) const          { bind(); update( carray, offset ); }
+
 
   };
 

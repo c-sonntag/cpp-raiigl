@@ -12,9 +12,11 @@
 
 namespace raiigl {
 
+#define raiigl_glew_throw_check(v) {if ( !v ) throw std::runtime_error( "Current GLEW Instance not support: " # v );}
 
   struct gl330 : public classes::non_copyable
   {
+    static constexpr __forceinline void check_compatibility() { raiigl_glew_throw_check( GLEW_VERSION_3_3 ); }
 
     __forceinline void draw_arrays( const primitive_type mode, const size_t first, const size_t count ) const
     { glDrawArrays( static_cast<GLenum>( mode ), static_cast<GLsizei>( first ), static_cast<GLsizei>( count ) ); }
