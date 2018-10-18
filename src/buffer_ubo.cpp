@@ -1,27 +1,16 @@
 #include <raiigl/buffer_ubo.hpp>
 
+#include <raiigl/conceptual/index_manager.hpp>
+
 namespace raiigl {
 
-  std::set<uint> buffer_ubo::binded_points_index;
-
-  // ---- ----
+  static raiigl::conceptual::index_manager buffer_ubo_indexed;
 
   uint buffer_ubo::new_binded_point_index()
-  {
-    for ( uint bpi( 0 ); ; ++bpi )
-    {
-      if ( binded_points_index.find( bpi ) != binded_points_index.end() )
-      { binded_points_index.insert( bpi ); return bpi; }
-    }
-  }
-
-  // ---- ----
+  { return buffer_ubo_indexed.new_index(); }
 
   void buffer_ubo::free_binded_point_index( const uint index )
-  {
-    binded_points_index.erase( index );
-  }
-
+  { return buffer_ubo_indexed.free_index( index ); }
 
 }
 

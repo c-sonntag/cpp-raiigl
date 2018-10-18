@@ -10,7 +10,7 @@ namespace raiigl {
 
   struct gl430 : public gl420
   {
-    static constexpr __forceinline void check_compatibility() { raiigl_glew_throw_check( GLEW_VERSION_4_3 ); }
+    static __forceinline void check_compatibility() { raiigl_glew_throw_check( GLEW_VERSION_4_3 ); }
 
     __forceinline void multidraw_arrays_indirect( const primitive_type mode, const draw_arrays_indirect_command * const indirect_command_array, const GLsizei drawcount, const GLsizei stride ) const
     { glMultiDrawArraysIndirect( static_cast<GLenum>( mode ), reinterpret_cast<const void *>( indirect_command_array ), drawcount, stride ); }

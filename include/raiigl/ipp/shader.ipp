@@ -53,7 +53,7 @@ namespace raiigl {
       const std::string error_message_str( error_message.data() );
 
       //
-      std::string code_without_carrier (code);
+      std::string code_without_carrier( code );
       std::replace( code_without_carrier.begin(), code_without_carrier.end(), '\r', ' ' );
 
       std::ostringstream oss;

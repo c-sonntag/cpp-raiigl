@@ -7,6 +7,8 @@
 #include <string>
 #include <istream>
 
+#include <raiigl/debug.hpp> /** @todo */
+
 namespace raiigl {
 
   enum class shader_type : GLuint
@@ -24,15 +26,20 @@ namespace raiigl {
    public:
     const GLuint id;
 
+   protected:
+    bool destroyed = false;
+
    public:
     shader( const std::string & code, shader_type _type );
 
     __forceinline shader( std::istream & code, shader_type _type ) :
       shader( to_string( code ), std::move( _type ) )
-    {}
+    { }
 
-    __forceinline ~shader()
-    { glDeleteShader( id ); }
+    __forceinline ~shader() {
+      glDeleteShader( id );
+      destroyed = true;
+    }
 
    public:
     raiigl_classes_non_copyable_movable( shader )

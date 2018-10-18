@@ -2,6 +2,8 @@
 
 #include <raiigl/classes/non_copyable_movable.hpp>
 
+#include <raiigl/conceptual/index_manager.hpp>
+
 #include <raiigl/shader.hpp>
 #include <raiigl/gl_types.hpp>
 
@@ -10,15 +12,19 @@
 #include <glm/glm.hpp>
 
 #include <string>
-#include <vector>
+#include <set>
 #include <istream>
 #include <stdexcept>
 
+#include <raiigl/debug.hpp>
 
 namespace raiigl {
 
   struct program
   {
+   public:
+    using shaders_p_t = std::set<raiigl::shader const *>;
+
    public:
     const GLuint id;
 
@@ -28,7 +34,7 @@ namespace raiigl {
 
     template<typename... Args>
     __forceinline void attach_shader( const shader & s, const Args & ... args )
-    { glAttachShader( id, s.id ); attach_shader( args... ); }
+    { attach_shader( s ); attach_shader( args... ); }
 
    private:
     __forceinline void detach_shader( const shader & s )
@@ -36,13 +42,13 @@ namespace raiigl {
 
     template<typename... Args>
     __forceinline void detach_shader( const shader & s, const Args & ... args )
-    { glDetachShader( id, s.id ); detach_shader( args... ); }
+    { detach_shader( s ); detach_shader( args... ); }
 
    private:
     void link_program();
 
    public:
-    __forceinline program( const std::vector<raiigl::shader *> shaders_p ) :
+    __forceinline program( const shaders_p_t & shaders_p ) :
       id( glCreateProgram() ) {
       for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
       link_program();
@@ -133,6 +139,25 @@ namespace raiigl {
     template<typename ... TUniformsTypes>
     __forceinline void set_uniform_value( const std::string & var_name, const TUniformsTypes & ... values ) const
     { program::set_uniform_value( get_uniform_location( var_name ), values... ); }
+
+   protected:
+    raiigl::conceptual::index_manager texture_indexed
+    {
+      static_cast<uint>( raiigl::textures_num::Texture30 ),
+      static_cast<uint>( raiigl::textures_num::Texture10 )
+    };
+
+   public:
+    __forceinline raiigl::textures_num new_texture_index()
+    { return raiigl::textures_num( texture_indexed.new_index() ); }
+
+    __forceinline void mark_texture_index( const raiigl::textures_num index )
+    { texture_indexed.free_index( uint( index ) ); }
+
+    /** @todo never be used ? make raiigl free index */
+    __forceinline void free_texture_index( const raiigl::textures_num index )
+    { texture_indexed.free_index( uint( index ) ); }
+
 
 
   };

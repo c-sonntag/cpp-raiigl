@@ -13,24 +13,22 @@ namespace raiigl {
   struct vertex_array : public classes::non_copyable
   {
    public:
-    const GLsizei n;
     const GLuint id;
 
    private:
-    __forceinline GLuint gen_vertex_array( GLsizei n )  {
+    __forceinline GLuint gen_vertex_array()  {
       GLuint id;
-      glGenVertexArrays( n, &id );
+      glGenVertexArrays( 1, &id );
       return id;
     }
 
    public:
-    vertex_array( GLsizei _n = 1 ) :
-      n( std::move( _n ) ),
-      id( gen_vertex_array( n ) )
+    vertex_array() :
+      id( gen_vertex_array() )
     {}
 
     ~vertex_array() {
-      glDeleteVertexArrays( n, &id );
+      glDeleteVertexArrays( 1, &id );
     }
 
    public:
@@ -54,9 +52,12 @@ namespace raiigl {
       glVertexAttribPointer( index, static_cast<GLint>( size ), static_cast<GLenum>( type ), normalize_it_from_data_type, stride, reinterpret_cast<void *>( buffer_decal ) );
     }
 
-    __forceinline void unattrib( const GLuint index ) {
-      glDisableVertexAttribArray( index );
-    }
+    __forceinline void unattrib( const GLuint index )
+    { glDisableVertexAttribArray( index ); }
+
+  public:
+    __forceinline void set_divisor( const GLuint index, GLuint divisor )
+    { glVertexAttribDivisor( index, divisor ); }
 
 
   };

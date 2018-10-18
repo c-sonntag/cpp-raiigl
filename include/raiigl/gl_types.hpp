@@ -71,6 +71,19 @@ namespace raiigl {
     OneMinusConstantAlpha = GL_ONE_MINUS_CONSTANT_ALPHA, ConstantAlpha         = GL_CONSTANT_ALPHA,
   };
 
+
+  enum class deth_func_type : GLenum
+  {
+    Never       = GL_NEVER,
+    Less        = GL_LESS,
+    Equal       = GL_EQUAL,
+    LessEqual   = GL_LEQUAL,
+    Greater     = GL_GREATER,
+    NotEqual    = GL_NOTEQUAL,
+    GreatEqual  = GL_GEQUAL,
+    Always      = GL_ALWAYS
+  };
+
   enum class textures_num : GLenum
   {
     Texture00 = GL_TEXTURE0,  Texture11 = GL_TEXTURE11,  Texture22 = GL_TEXTURE22,

@@ -9,16 +9,15 @@
 
 #include <GL/glew.h>
 
-#include <set>
 #include <cstring>
+#include <stdexcept>
+
+#include <raiigl/debug.hpp>
 
 namespace raiigl {
 
   struct buffer_ubo : public raiigl::buffer
   {
-   protected:
-    static std::set<uint> binded_points_index;
-
    public:
     static uint new_binded_point_index();
     static void free_binded_point_index( const uint index );
@@ -34,13 +33,13 @@ namespace raiigl {
     bool do_free_binded_point_at_destruct;
 
    public:
-    buffer_ubo( const buffer_usage _usage = buffer_usage::DynamicDraw, const GLsizei _n = 1 ):
-      buffer( buffer_type::Uniform, std::move( _usage ), std::move( _n ) ),
+    buffer_ubo( const buffer_usage _usage = buffer_usage::DynamicDraw ):
+      buffer( buffer_type::Uniform, std::move( _usage ) ),
       current_bind_buffer_base( new_binded_point_index() ), do_free_binded_point_at_destruct( true )
     { raiigl::gl330::check_compatibility(); assign_base(); }
 
-    buffer_ubo( const uint binding_point, const uint buffer_offset, const uint buffer_size, const buffer_usage _usage = buffer_usage::StaticDraw, const GLsizei _n = 1 ):
-      buffer( buffer_type::Uniform, std::move( _usage ), std::move( _n ) ),
+    buffer_ubo( const uint binding_point, const uint buffer_offset, const uint buffer_size, const buffer_usage _usage = buffer_usage::StaticDraw ):
+      buffer( buffer_type::Uniform, std::move( _usage ) ),
       current_bind_buffer_base( binding_point ), do_free_binded_point_at_destruct( false )
     { raiigl::gl330::check_compatibility(); assign_range_block( buffer_offset, buffer_size ); }
 
@@ -66,20 +65,34 @@ namespace raiigl {
 
     __forceinline void block_binding( raiigl::program & p, const char * ubo_name ) const {
       GLuint index = glGetUniformBlockIndex( p.id, ubo_name );
+      if ( index == GL_INVALID_INDEX )
+        throw std::runtime_error( "Can't found " + std::string( ubo_name ) + " for program id : " + std::to_string( p.id ) );
       block_binding( p, index );
     }
 
    public:
-    void * map_buffer( const buffer_mode mode )
+    __forceinline void * map_buffer( const buffer_mode mode )
     { return glMapBuffer( GL_UNIFORM_BUFFER, GLenum( mode ) ); }
 
-    void unmap_buffer()
+    __forceinline void unmap_buffer()
     { glUnmapBuffer( GL_UNIFORM_BUFFER ); }
 
    public:
-    template<typename TData>
-    void memcpy_write_block( const TData & data )
-    { memcpy( map_buffer( buffer_mode::WriteOnly ), &data, sizeof( TData ) ); unmap_buffer(); }
+    template<typename TData> __forceinline
+    void memcpy_write_block( const TData & data ) {
+      void * const mapped_w_p( map_buffer( buffer_mode::WriteOnly ) );
+      if ( mapped_w_p ) {
+        memcpy( mapped_w_p, &data, sizeof( TData ) );
+        unmap_buffer();
+      }
+    }
+
+   public:
+    template<typename TData> __forceinline
+    void bind_and_memcpy_write_block( const TData & data ) {
+      bind();
+      memcpy_write_block( data );
+    }
 
 
   };

@@ -10,8 +10,8 @@ namespace raiigl {
   struct buffer_ssbo : public raiigl::buffer
   {
    public:
-    buffer_ssbo( const buffer_usage _usage = buffer_usage::StaticDraw, const GLsizei _n = 1 ):
-      buffer( buffer_type::ShaderStorage, std::move( _usage ), std::move( _n ) )
+    buffer_ssbo( const buffer_usage _usage = buffer_usage::StaticDraw ):
+      buffer( buffer_type::ShaderStorage, std::move( _usage ) )
     { raiigl::gl430::check_compatibility(); }
    public:
     __forceinline void layout_binding( GLuint binding_num ) const
