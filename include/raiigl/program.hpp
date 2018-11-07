@@ -27,6 +27,10 @@ namespace raiigl {
 
    public:
     const GLuint id;
+    const std::string description;
+
+   protected:
+    bool destroyed = false;
 
    private:
     __forceinline void attach_shader( const shader & s )
@@ -48,8 +52,17 @@ namespace raiigl {
     void link_program();
 
    public:
+    __forceinline program( const std::string _description, const shaders_p_t & shaders_p ) :
+      id( glCreateProgram() ),
+      description( std::move( _description ) ) {
+      for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
+      link_program();
+      for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
+    }
+
     __forceinline program( const shaders_p_t & shaders_p ) :
-      id( glCreateProgram() ) {
+      id( glCreateProgram() ),
+      description( "unknown" ) {
       for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
       link_program();
       for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
@@ -57,15 +70,28 @@ namespace raiigl {
 
    public:
     template<typename... Args>
-    __forceinline program( const Args & ... shaders ) :
-      id( glCreateProgram() ) {
+    __forceinline program( const std::string _description, const Args & ... shaders ) :
+      id( glCreateProgram() ),
+      description( std::move( _description ) ) {
       attach_shader( shaders... );
       link_program();
       detach_shader( shaders... );
     }
 
-    __forceinline ~program()
-    { glDeleteProgram( id ); }
+    template<typename... Args>
+    __forceinline program( const Args & ... shaders ) :
+      id( glCreateProgram() ),
+      description( "unknown" ) {
+      attach_shader( shaders... );
+      link_program();
+      detach_shader( shaders... );
+    }
+
+   public:
+    __forceinline ~program() {
+      glDeleteProgram( id );
+      destroyed = true;
+    }
 
    public:
     raiigl_classes_non_copyable_movable( program )
@@ -90,7 +116,7 @@ namespace raiigl {
     __forceinline GLint get_uniform_location( const std::string & var ) const {
       const GLint v( glGetUniformLocation( id, var.c_str() ) );
       if ( v < 0 )
-        throw std::runtime_error( "Impossible to get '" + var + "' into shader_pack" );
+        throw std::runtime_error( "Impossible to get '" + var + "' into shader_pack(" + description + ")" );
       return static_cast<GLint>( v ) ;
     }
 

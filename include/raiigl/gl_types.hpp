@@ -18,7 +18,7 @@ namespace raiigl {
     TriangleStripAdjacency = GL_TRIANGLE_STRIP_ADJACENCY,
     TrianglesAdjacency     = GL_TRIANGLES_ADJACENCY,
     Patches                = GL_PATCHES,
-    None                   = 0, /**< hack for other script */
+    None                   = 0xFFFF, /**< hack for other script */
   };
 
   enum class indice_type : GLenum
