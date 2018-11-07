@@ -1,6 +1,6 @@
 #pragma once
 
-#include <raiigl/classes/non_copyable_movable.hpp>
+#include <raiigl/classes/non_copyable.hpp>
 
 #include <raiigl/conceptual/index_manager.hpp>
 
@@ -16,11 +16,9 @@
 #include <istream>
 #include <stdexcept>
 
-#include <raiigl/debug.hpp>
-
 namespace raiigl {
 
-  struct program
+  struct program : public raiigl::classes::non_copyable
   {
    public:
     using shaders_p_t = std::set<raiigl::shader const *>;
@@ -51,50 +49,53 @@ namespace raiigl {
    private:
     void link_program();
 
-   public:
-    __forceinline program( const std::string _description, const shaders_p_t & shaders_p ) :
-      id( glCreateProgram() ),
-      description( std::move( _description ) ) {
+   private:
+    __forceinline void process_link( const shaders_p_t & shaders_p ) {
       for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
       link_program();
       for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
     }
 
-    __forceinline program( const shaders_p_t & shaders_p ) :
-      id( glCreateProgram() ),
-      description( "unknown" ) {
-      for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
+    template<typename... Args>
+    __forceinline void process_link( const Args & ... shaders ) {
+      attach_shader( shaders... );
       link_program();
-      for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
+      detach_shader( shaders... );
     }
+
+   public:
+    __forceinline program( const std::string _description, const shaders_p_t & shaders_p ) :
+      id( glCreateProgram() ), description( std::move( _description ) )
+    { process_link( shaders_p ); }
+
+    __forceinline program( const shaders_p_t & shaders_p ) :
+      id( glCreateProgram() ), description( "unknown" )
+    { process_link( shaders_p ); }
 
    public:
     template<typename... Args>
     __forceinline program( const std::string _description, const Args & ... shaders ) :
-      id( glCreateProgram() ),
-      description( std::move( _description ) ) {
-      attach_shader( shaders... );
-      link_program();
-      detach_shader( shaders... );
-    }
+      id( glCreateProgram() ), description( std::move( _description ) )
+    { process_link( shaders... ); }
 
     template<typename... Args>
     __forceinline program( const Args & ... shaders ) :
-      id( glCreateProgram() ),
-      description( "unknown" ) {
-      attach_shader( shaders... );
-      link_program();
-      detach_shader( shaders... );
-    }
+      id( glCreateProgram() ), description( "unknown" )
+    { process_link( shaders... ); }
 
    public:
     __forceinline ~program() {
-      glDeleteProgram( id );
+      if ( id > 0 ) glDeleteProgram( id );
       destroyed = true;
     }
 
    public:
-    raiigl_classes_non_copyable_movable( program )
+    __forceinline program( program && p ) :
+      id( std::move( p.id ) ),
+      description( std::move( p.description ) ),
+      destroyed( std::move( p.destroyed ) ),
+      texture_indexed( std::move( p.texture_indexed ) )
+    { const_cast<GLuint &>( p.id ) = 0; }
 
    public:
     __forceinline void use() const

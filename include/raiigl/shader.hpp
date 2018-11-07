@@ -1,13 +1,11 @@
 #pragma once
 
-#include <raiigl/classes/non_copyable_movable.hpp>
+#include <raiigl/classes/non_copyable.hpp>
 
 #include <GL/glew.h>
 
 #include <string>
 #include <istream>
-
-#include <raiigl/debug.hpp> /** @todo */
 
 namespace raiigl {
 
@@ -18,12 +16,10 @@ namespace raiigl {
     Compute  = GL_COMPUTE_SHADER
   };
 
-  struct shader
+  struct shader : public raiigl::classes::non_copyable
   {
    public:
     const shader_type type;
-
-   public:
     const GLuint id;
 
    protected:
@@ -37,12 +33,16 @@ namespace raiigl {
     { }
 
     __forceinline ~shader() {
-      glDeleteShader( id );
+      if ( id > 0 ) glDeleteShader( id );
       destroyed = true;
     }
 
    public:
-    raiigl_classes_non_copyable_movable( shader )
+    __forceinline shader( shader && s ) :
+      type( std::move( s.type ) ),
+      id( std::move( s.id ) ),
+      destroyed( std::move( s.destroyed ) )
+    { const_cast<GLuint &>( s.id ) = 0; }
 
    private:
     static std::string to_string( std::istream & code );

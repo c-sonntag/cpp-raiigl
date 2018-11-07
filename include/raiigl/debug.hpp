@@ -2,4 +2,4 @@
 
 #include <iostream>
 
-// #define debug_cout std::cout
+#define debug_cout std::cout
