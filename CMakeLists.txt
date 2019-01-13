@@ -46,6 +46,7 @@ link_libraries(${OPENGL_LIBRARIES})
 add_definitions(${OPENGL_DEFINITIONS})
 
 # --- LIB : GLEW ---
+set(GLEW_SHARED ON)
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
 link_directories(${GLEW_DIRECTORIES})
@@ -53,12 +54,13 @@ link_libraries(${GLEW_LIBRARIES})
 add_definitions(${GLEW_DEFINITIONS})
 
 # --- LIB : GLM ---
+message(STATUS "GLM_DIR : ${GLM_DIR}")
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 link_directories(${GLM_DIRECTORIES})
 link_libraries(${GLM_LIBRARIES})
 add_definitions(${GLM_DEFINITIONS})
-
+message(STATUS "GLM_INCLUDE_DIRS : ${GLM_INCLUDE_DIRS}")
 
 
 #

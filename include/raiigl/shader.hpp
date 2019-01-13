@@ -13,8 +13,14 @@ namespace raiigl {
   {
     Vertex   = GL_VERTEX_SHADER,
     Fragment = GL_FRAGMENT_SHADER,
-    Compute  = GL_COMPUTE_SHADER
+    Compute  = GL_COMPUTE_SHADER,
+    Geometry = GL_GEOMETRY_SHADER,
+    Unknown = 0
   };
+
+  std::string name( const shader_type& st );
+
+  // ---- ----
 
   struct shader : public raiigl::classes::non_copyable
   {
@@ -23,29 +29,31 @@ namespace raiigl {
     const GLuint id;
 
    protected:
-    bool destroyed = false;
+    bool invalid_state = false;
 
    public:
-    shader( const std::string & code, shader_type _type );
+    shader( const std::string& code, shader_type _type );
 
-    __forceinline shader( std::istream & code, shader_type _type ) :
+    __forceinline shader( std::istream& code, shader_type _type ) :
       shader( to_string( code ), std::move( _type ) )
     { }
 
-    __forceinline ~shader() {
-      if ( id > 0 ) glDeleteShader( id );
-      destroyed = true;
+    __forceinline ~shader()
+    {
+      if( ( id > 0 ) && !invalid_state )
+        glDeleteShader( id );
+      invalid_state = true;
     }
 
    public:
-    __forceinline shader( shader && s ) :
+    __forceinline shader( shader&& s ) :
       type( std::move( s.type ) ),
       id( std::move( s.id ) ),
-      destroyed( std::move( s.destroyed ) )
-    { const_cast<GLuint &>( s.id ) = 0; }
+      invalid_state( std::move( s.invalid_state ) )
+    { const_cast<GLuint&>( s.id ) = 0; s.invalid_state = true; }
 
    private:
-    static std::string to_string( std::istream & code );
+    static std::string to_string( std::istream& code );
 
   };
 

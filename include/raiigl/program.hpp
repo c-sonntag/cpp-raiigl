@@ -15,87 +15,91 @@
 #include <set>
 #include <istream>
 #include <stdexcept>
+#include <memory>
 
 namespace raiigl {
 
   struct program : public raiigl::classes::non_copyable
   {
    public:
-    using shaders_p_t = std::set<raiigl::shader const *>;
+    using shaders_p_t = std::set<raiigl::shader const*>;
 
    public:
     const GLuint id;
     const std::string description;
 
    protected:
-    bool destroyed = false;
+    bool invalid_state = false;
 
    private:
-    __forceinline void attach_shader( const shader & s )
+    __forceinline void attach_shader( const shader& s )
     { glAttachShader( id, s.id ); }
 
-    template<typename... Args>
-    __forceinline void attach_shader( const shader & s, const Args & ... args )
-    { attach_shader( s ); attach_shader( args... ); }
+    template<typename ... Args>
+    __forceinline void attach_shader( const shader& s, const Args& ... args )
+    { attach_shader( s ); attach_shader( args ... ); }
 
    private:
-    __forceinline void detach_shader( const shader & s )
+    __forceinline void detach_shader( const shader& s )
     { glDetachShader( id, s.id ); }
 
-    template<typename... Args>
-    __forceinline void detach_shader( const shader & s, const Args & ... args )
-    { detach_shader( s ); detach_shader( args... ); }
+    template<typename ... Args>
+    __forceinline void detach_shader( const shader& s, const Args& ... args )
+    { detach_shader( s ); detach_shader( args ... ); }
 
    private:
     void link_program();
 
    private:
-    __forceinline void process_link( const shaders_p_t & shaders_p ) {
-      for ( const raiigl::shader * const s : shaders_p ) if ( s ) attach_shader( *s );
+    __forceinline void process_link( const shaders_p_t& shaders_p )
+    {
+      for( const raiigl::shader* const s : shaders_p ) if( s ) attach_shader( *s );
       link_program();
-      for ( const raiigl::shader * const s : shaders_p ) if ( s ) detach_shader( *s );
+      for( const raiigl::shader* const s : shaders_p ) if( s ) detach_shader( *s );
     }
 
-    template<typename... Args>
-    __forceinline void process_link( const Args & ... shaders ) {
-      attach_shader( shaders... );
+    template<typename ... Args>
+    __forceinline void process_link( const Args& ... shaders )
+    {
+      attach_shader( shaders ... );
       link_program();
-      detach_shader( shaders... );
+      detach_shader( shaders ... );
     }
 
    public:
-    __forceinline program( const std::string _description, const shaders_p_t & shaders_p ) :
+    __forceinline program( const std::string _description, const shaders_p_t& shaders_p ) :
       id( glCreateProgram() ), description( std::move( _description ) )
     { process_link( shaders_p ); }
 
-    __forceinline program( const shaders_p_t & shaders_p ) :
+    __forceinline program( const shaders_p_t& shaders_p ) :
       id( glCreateProgram() ), description( "unknown" )
     { process_link( shaders_p ); }
 
    public:
-    template<typename... Args>
-    __forceinline program( const std::string _description, const Args & ... shaders ) :
+    template<typename ... Args>
+    __forceinline program( const std::string _description, const Args& ... shaders ) :
       id( glCreateProgram() ), description( std::move( _description ) )
-    { process_link( shaders... ); }
+    { process_link( shaders ... ); }
 
-    template<typename... Args>
-    __forceinline program( const Args & ... shaders ) :
+    template<typename ... Args>
+    __forceinline program( const Args& ... shaders ) :
       id( glCreateProgram() ), description( "unknown" )
-    { process_link( shaders... ); }
+    { process_link( shaders ... ); }
 
    public:
-    __forceinline ~program() {
-      if ( id > 0 ) glDeleteProgram( id );
-      destroyed = true;
+    __forceinline ~program()
+    {
+      if( ( id > 0 ) && !invalid_state )
+        glDeleteProgram( id );
+      invalid_state = true;
     }
 
    public:
-    __forceinline program( program && p ) :
+    __forceinline program( program&& p ) :
       id( std::move( p.id ) ),
       description( std::move( p.description ) ),
-      destroyed( std::move( p.destroyed ) ),
-      texture_indexed( std::move( p.texture_indexed ) )
-    { const_cast<GLuint &>( p.id ) = 0; }
+      invalid_state( std::move( p.invalid_state ) )
+    { const_cast<GLuint&>( p.id ) = 0; p.invalid_state = true; }
 
    public:
     __forceinline void use() const
@@ -114,11 +118,12 @@ namespace raiigl {
     //__forceinline GLint get_uniform_location( const std::string & var ) const
     //{ return get_uniform_location( var.c_str() ); }
 
-    __forceinline GLint get_uniform_location( const std::string & var ) const {
+    __forceinline GLint get_uniform_location( const std::string& var ) const
+    {
       const GLint v( glGetUniformLocation( id, var.c_str() ) );
-      if ( v < 0 )
+      if( v < 0 )
         throw std::runtime_error( "Impossible to get '" + var + "' into shader_pack(" + description + ")" );
-      return static_cast<GLint>( v ) ;
+      return static_cast<GLint>( v );
     }
 
 
@@ -137,10 +142,10 @@ namespace raiigl {
 
     static __forceinline void set_uniform_value( const GLint id, const textures_num num ) { glUniform1i( id, static_cast<int>( num ) - static_cast<int>( textures_num::Texture00 ) ); }
 
-    static __forceinline void set_uniform_value( const GLint id, const glm::vec2 & v )   { glUniform2fv( id, 1, &v[0] ); }
-    static __forceinline void set_uniform_value( const GLint id, const glm::vec3 & v )   { glUniform3fv( id, 1, &v[0] ); }
-    static __forceinline void set_uniform_value( const GLint id, const glm::vec4 & v )   { glUniform4fv( id, 1, &v[0] ); }
-    static __forceinline void set_uniform_value( const GLint id, const glm::mat4x4 & v ) { glUniformMatrix4fv( id, 1, GL_FALSE, &v[0][0] ); }
+    static __forceinline void set_uniform_value( const GLint id, const glm::vec2& v )   { glUniform2fv( id, 1, &v[0] ); }
+    static __forceinline void set_uniform_value( const GLint id, const glm::vec3& v )   { glUniform3fv( id, 1, &v[0] ); }
+    static __forceinline void set_uniform_value( const GLint id, const glm::vec4& v )   { glUniform4fv( id, 1, &v[0] ); }
+    static __forceinline void set_uniform_value( const GLint id, const glm::mat4x4& v ) { glUniformMatrix4fv( id, 1, GL_FALSE, &v[0][0] ); }
 
    public:
     // template <typename TUniformType>
@@ -164,28 +169,23 @@ namespace raiigl {
     //{ program::set_uniform_value( get_uniform_location( var_name ), value ); }
 
     template<typename ... TUniformsTypes>
-    __forceinline void set_uniform_value( const std::string & var_name, const TUniformsTypes & ... values ) const
-    { program::set_uniform_value( get_uniform_location( var_name ), values... ); }
+    __forceinline void set_uniform_value( const std::string& var_name, const TUniformsTypes& ... values ) const
+    { program::set_uniform_value( get_uniform_location( var_name ), values ... ); }
 
    protected:
-    raiigl::conceptual::index_manager texture_indexed
-    {
-      static_cast<uint>( raiigl::textures_num::Texture30 ),
-      static_cast<uint>( raiigl::textures_num::Texture10 )
-    };
+    static std::unique_ptr<raiigl::conceptual::index_manager> texture_indexed_singleton_up;
+    static raiigl::conceptual::index_manager& get_texture_indexed();
 
    public:
-    __forceinline raiigl::textures_num new_texture_index()
-    { return raiigl::textures_num( texture_indexed.new_index() ); }
+    static __forceinline raiigl::textures_num new_texture_index()
+    { return raiigl::textures_num( get_texture_indexed().new_index() ); }
 
-    __forceinline void mark_texture_index( const raiigl::textures_num index )
-    { texture_indexed.free_index( uint( index ) ); }
+    static __forceinline void mark_texture_index( const raiigl::textures_num index )
+    { get_texture_indexed().mark_index( uint( index ) ); }
 
     /** @todo never be used ? make raiigl free index */
-    __forceinline void free_texture_index( const raiigl::textures_num index )
-    { texture_indexed.free_index( uint( index ) ); }
-
-
+    static __forceinline void free_texture_index( const raiigl::textures_num index )
+    { get_texture_indexed().free_index( uint( index ) ); }
 
   };
 

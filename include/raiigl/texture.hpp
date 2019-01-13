@@ -1,6 +1,6 @@
 #pragma once
 
-#include <raiigl/classes/non_copyable_movable.hpp>
+#include <raiigl/classes/non_copyable.hpp>
 
 #include <raiigl/types.hpp>
 #include <raiigl/gl_types.hpp>
@@ -40,7 +40,8 @@ namespace raiigl {
     BGRAInteger    = GL_BGRA_INTEGER,
     StencilIndex   = GL_STENCIL_INDEX,
     DepthComponent = GL_DEPTH_COMPONENT,
-    DepthStencil   = GL_DEPTH_STENCIL
+    DepthStencil   = GL_DEPTH_STENCIL,
+    Unknown        = GLenum( -1 )
   };
 
   enum class pixel_type : GLenum
@@ -145,98 +146,124 @@ namespace raiigl {
   enum class wrap_type : GLint
   {
     ClampToEdge       = GL_CLAMP_TO_EDGE,
-    ClampToBorder     = GL_CLAMP_TO_BORDER,
+    // deprecied : ClampToBorder     = GL_CLAMP_TO_BORDER,
     MirroredRepeat    = GL_MIRRORED_REPEAT,
     Repeat            = GL_REPEAT,
     MirrorClampToEdge = GL_MIRROR_CLAMP_TO_EDGE
   };
 
 
-  struct texture //: public classes::non_copyable
+  struct texture : public classes::non_copyable
   {
    public:
     const texture_type base_type;
-    const GLsizei n;
-
-   public:
     const GLuint id;
 
+   protected:
+    bool invalid_state = false;
+
    private:
-    __forceinline GLuint gen_texture( const GLsizei n )  {
+    __forceinline GLuint gen_texture()
+    {
       GLuint id;
-      glGenTextures( n, &id );
+      glGenTextures( 1, &id );
       return id;
     }
 
    public:
-    texture( const texture_type _base_type, const GLsizei _n = 1 ):
+    texture( const texture_type _base_type ) :
       base_type( std::move( _base_type ) ),
-      n( std::move( _n ) ),
-      id( gen_texture( n ) )
+      id( gen_texture() )
     {}
 
-    __forceinline ~texture()
-    { glDeleteTextures( n, &id ); }
+    virtual __forceinline ~texture()
+    {
+      if( ( id > 0 ) && !invalid_state )
+        glDeleteTextures( 1, &id );
+      invalid_state = true;
+    }
 
    public:
-    raiigl_classes_non_copyable_movable( texture )
+    __forceinline texture( texture&& t ) :
+      base_type( std::move( t.base_type ) ),
+      id( std::move( t.id ) ),
+      invalid_state( std::move( t.invalid_state ) ),
+      m_last_pixel_format( std::move( t.m_last_pixel_format ) ),
+      m_last_textures_num( std::move( t.m_last_textures_num ) )
+    { const_cast<GLuint&>( t.id ) = 0; t.invalid_state = true; }
+
+   protected:
+    pixel_format m_last_pixel_format{ pixel_format( -1 ) };
+    textures_num m_last_textures_num{ textures_num::None };
+
+   public:
+    __forceinline pixel_format last_pixel_format() const { return m_last_pixel_format; }
+    __forceinline textures_num last_textures_num() const { return m_last_textures_num; }
 
    public:
     __forceinline void bind() const
     { glBindTexture( static_cast<GLenum>( base_type ), id ); }
 
-    __forceinline void bind( const texture_type other_type ) const
+    __forceinline void bind( const texture_type other_type )
     { glBindTexture( static_cast<GLenum>( other_type ), id ); }
 
     __forceinline void unbind() const
     { glBindTexture( static_cast<GLenum>( base_type ), 0 ); }
 
    public:
-    __forceinline void send_image1d( const texture_image1d_type target, const GLint level, const internal_format_type internalformat, const uint width, const pixel_format format, pixel_type pixel, const GLvoid * const data, const uint border = 0 ) const
-    { glTexImage1D( static_cast<GLenum>( target ), level, static_cast<GLint>( internalformat ), static_cast<GLsizei>( width ), static_cast<GLint>( border ), static_cast<GLenum>( format ), static_cast<GLenum>( pixel ), data ); }
+    __forceinline void send_image1d( const texture_image1d_type target, const GLint level, const internal_format_type internalformat, const uint width, const pixel_format format, pixel_type pixel, const GLvoid* const data, const uint border = 0 )
+    {
+      glTexImage1D( static_cast<GLenum>( target ), level, static_cast<GLint>( internalformat ), static_cast<GLsizei>( width ), static_cast<GLint>( border ), static_cast<GLenum>( format ), static_cast<GLenum>( pixel ), data );
+      m_last_pixel_format = format;
+    }
 
-    __forceinline void send_image1d( const GLint level, const internal_format_type internalformat, const uint width, const pixel_format format, pixel_type pixel, const GLvoid * const data, const uint border = 0 ) const
+    __forceinline void send_image1d( const GLint level, const internal_format_type internalformat, const uint width, const pixel_format format, pixel_type pixel, const GLvoid* const data, const uint border = 0 )
     { send_image1d( static_cast<texture_image1d_type>( base_type ), level, internalformat, width, format, pixel, data, border ); }
 
    public:
-    __forceinline void send_image2d( const texture_image2d_type target, const GLint level, const internal_format_type internalformat, const uint width, uint height, const pixel_format format, pixel_type pixel, const GLvoid * const data, const uint border = 0 ) const
-    { glTexImage2D( static_cast<GLenum>( target ), level, static_cast<GLint>( internalformat ), static_cast<GLsizei>( width ), static_cast<GLsizei>( height ), static_cast<GLint>( border ), static_cast<GLenum>( format ), static_cast<GLenum>( pixel ), data ); }
+    __forceinline void send_image2d( const texture_image2d_type target, const GLint level, const internal_format_type internalformat, const uint width, uint height, const pixel_format format, pixel_type pixel, const GLvoid* const data, const uint border = 0 )
+    {
+      glTexImage2D( static_cast<GLenum>( target ), level, static_cast<GLint>( internalformat ), static_cast<GLsizei>( width ), static_cast<GLsizei>( height ), static_cast<GLint>( border ), static_cast<GLenum>( format ), static_cast<GLenum>( pixel ), data );
+      m_last_pixel_format = format;
+    }
 
-    __forceinline void send_image2d( const GLint level, const internal_format_type internalformat, const uint width, uint height, const pixel_format format, pixel_type pixel, const GLvoid * const data, const uint border = 0 ) const
+    __forceinline void send_image2d( const GLint level, const internal_format_type internalformat, const uint width, uint height, const pixel_format format, pixel_type pixel, const GLvoid* const data, const uint border = 0 )
     { send_image2d( static_cast<texture_image2d_type>( base_type ), level, internalformat, width, height, format, pixel, data, border ); }
 
    protected:
-    __forceinline void set_param( const GLenum pname, GLint param ) const
+    __forceinline void set_param( const GLenum pname, GLint param )
     { glTexParameteri( static_cast<GLenum>( base_type ), pname, param ); }
 
    public:
-    __forceinline void set_param_minifying_filter( const minifying_filter_type param = minifying_filter_type::NearestMipmapLinear ) const
+    __forceinline void set_param_minifying_filter( const minifying_filter_type param = minifying_filter_type::NearestMipmapLinear )
     { set_param( GL_TEXTURE_MIN_FILTER, static_cast<GLint>( param ) ); }
 
-    __forceinline void set_param_magnification_filter( const magnification_filter_type param = magnification_filter_type::Linear ) const
+    __forceinline void set_param_magnification_filter( const magnification_filter_type param = magnification_filter_type::Linear )
     { set_param( GL_TEXTURE_MIN_FILTER, static_cast<GLint>( param ) ); }
 
-    __forceinline void set_param_minifying_and_magnification_filter( const minifying_filter_type min = minifying_filter_type::NearestMipmapLinear, const magnification_filter_type mag = magnification_filter_type::Linear ) const
+    __forceinline void set_param_minifying_and_magnification_filter( const minifying_filter_type min = minifying_filter_type::NearestMipmapLinear, const magnification_filter_type mag = magnification_filter_type::Linear )
     { set_param_minifying_filter( min ); set_param_magnification_filter( mag ); }
 
    public:
-    __forceinline void set_param_wrap_s( const wrap_type param = wrap_type::Repeat ) const
+    __forceinline void set_param_wrap_s( const wrap_type param = wrap_type::Repeat )
     { set_param( GL_TEXTURE_WRAP_S, static_cast<GLint>( param ) ); }
 
-    __forceinline void set_param_wrap_t( const wrap_type param = wrap_type::Repeat ) const
+    __forceinline void set_param_wrap_t( const wrap_type param = wrap_type::Repeat )
     { set_param( GL_TEXTURE_WRAP_T, static_cast<GLint>( param ) ); }
 
-    __forceinline void set_param_wrap_r( const wrap_type param = wrap_type::Repeat ) const
+    __forceinline void set_param_wrap_r( const wrap_type param = wrap_type::Repeat )
     { set_param( GL_TEXTURE_WRAP_R, static_cast<GLint>( param ) ); }
 
-    __forceinline void set_param_wrap_str( const wrap_type s = wrap_type::Repeat, const wrap_type t = wrap_type::Repeat, const wrap_type r = wrap_type::Repeat ) const
+    __forceinline void set_param_wrap_str( const wrap_type s = wrap_type::Repeat, const wrap_type t = wrap_type::Repeat, const wrap_type r = wrap_type::Repeat )
     { set_param_wrap_s( s ); set_param_wrap_t( t ); set_param_wrap_r( r ); }
 
-    __forceinline void set_param_wrap( const wrap_type str = wrap_type::Repeat ) const
+    __forceinline void set_param_wrap( const wrap_type str = wrap_type::Repeat )
     { set_param_wrap_str( str, str, str ); }
 
    public:
-    __forceinline void bind_on_texture( const raiigl::textures_num num ) const {
+    __forceinline void bind_on_texture( const raiigl::textures_num num )
+    {
+      m_last_textures_num = num;
       glActiveTexture( static_cast<GLenum>( num ) );
       bind();
       glActiveTexture( 0 );

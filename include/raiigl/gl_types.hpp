@@ -97,6 +97,7 @@ namespace raiigl {
     Texture08 = GL_TEXTURE8,  Texture19 = GL_TEXTURE19,  Texture30 = GL_TEXTURE30,
     Texture09 = GL_TEXTURE9,  Texture20 = GL_TEXTURE20,  Texture31 = GL_TEXTURE31,
     Texture10 = GL_TEXTURE10, Texture21 = GL_TEXTURE21,
+    None = 0
   };
 }
 

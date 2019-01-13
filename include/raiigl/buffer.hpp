@@ -80,22 +80,38 @@ namespace raiigl {
    public:
     const GLuint id;
 
+   protected:
+    bool invalid_state = false;
+
    private:
-    __forceinline GLuint gen_buffer()  {
+    __forceinline GLuint gen_buffer()
+    {
       GLuint id;
       glGenBuffers( 1, &id );
       return id;
     }
 
    public:
-    buffer( const buffer_type _type = buffer_type::Array, const buffer_usage _usage = buffer_usage::StaticDraw ):
+    buffer( const buffer_type _type = buffer_type::Array, const buffer_usage _usage = buffer_usage::StaticDraw ) :
       type( std::move( _type ) ),
       usage( std::move( _usage ) ),
       id( gen_buffer() )
     {}
 
     __forceinline ~buffer()
-    { glDeleteBuffers( 1, &id ); }
+    {
+      if( ( id > 0 ) && !invalid_state )
+        glDeleteBuffers( 1, &id );
+      invalid_state = true;
+    }
+
+   public:
+    __forceinline buffer( buffer&& b ) :
+      type( std::move( b.type ) ),
+      usage( std::move( b.usage ) ),
+      id( std::move( b.id ) ),
+      invalid_state( std::move( b.invalid_state ) )
+    { const_cast<GLuint&>( b.id ) = 0; b.invalid_state = true; }
 
    public:
     __forceinline void bind() const
@@ -105,7 +121,8 @@ namespace raiigl {
     { glBindBuffer( static_cast<GLenum>( type ), 0 ); binded_buffer_type.erase( type ); }
 
    public:
-    __forceinline void send( const size_t byte_size, const GLvoid * const data ) const  {
+    __forceinline void send( const size_t byte_size, const GLvoid* const data ) const
+    {
       glBufferData(
         static_cast<GLenum>( type ),
         static_cast<GLsizeiptr>( byte_size ),
@@ -114,7 +131,8 @@ namespace raiigl {
       );
     }
 
-    __forceinline void update( const size_t byte_size, const GLvoid * const data, const size_t offset = 0 ) const  {
+    __forceinline void update( const size_t byte_size, const GLvoid* const data, const size_t offset = 0 ) const
+    {
       glBufferSubData(
         static_cast<GLenum>( type ),
         GLintptr( offset ),
@@ -127,36 +145,36 @@ namespace raiigl {
     struct struct_wrapper
     {
       const size_t byte_size;
-      const GLvoid * const data;
+      const GLvoid* const data;
 
       template<typename TData> __forceinline
-      struct_wrapper( const TData & data ) : byte_size( sizeof( TData ) ), data( &data ) {}
+      struct_wrapper( const TData& data ) : byte_size( sizeof( TData ) ), data( &data ) {}
 
       template<typename TType> __forceinline
-      struct_wrapper( const std::vector<TType> & vec ) : byte_size( vec.size() * sizeof( TType ) ), data( vec.data() ) {}
+      struct_wrapper( const std::vector<TType>& vec ) : byte_size( vec.size() * sizeof( TType ) ), data( vec.data() ) {}
 
       template<typename TType, std::size_t TSize> __forceinline
-      struct_wrapper( const std::array<TType, TSize> & arr ) : byte_size( TSize * sizeof( TType ) ), data( arr.data() ) {}
+      struct_wrapper( const std::array<TType, TSize>& arr ) : byte_size( TSize * sizeof( TType ) ), data( arr.data() ) {}
 
       template<typename TType, std::size_t TSize> __forceinline
-      struct_wrapper( const TType( &carray )[TSize] ) : byte_size( TSize * sizeof( TType ) ), data( carray ) {}
+      struct_wrapper( const TType ( & carray )[TSize] ) : byte_size( TSize * sizeof( TType ) ), data( carray ) {}
     };
 
    public:
-    void send( const struct_wrapper & sw ) const
+    void send( const struct_wrapper& sw ) const
     { send( sw.byte_size, sw.data ); }
 
-    void update( const struct_wrapper & sw, const size_t offset = 0 ) const
+    void update( const struct_wrapper& sw, const size_t offset = 0 ) const
     { update( sw.byte_size, sw.data, offset ); }
 
 
    public:
-    __forceinline void bind_and_send( const size_t byte_size, const GLvoid * const data ) const { bind(); send( byte_size, data ); }
-    __forceinline void bind_and_send( const struct_wrapper & sw ) const { bind(); send( sw ); }
+    __forceinline void bind_and_send( const size_t byte_size, const GLvoid* const data ) const { bind(); send( byte_size, data ); }
+    __forceinline void bind_and_send( const struct_wrapper& sw ) const { bind(); send( sw ); }
 
    public:
-    __forceinline void bind_and_update( const size_t byte_size, const GLvoid * const data, const size_t offset = 0 ) const { bind(); update( byte_size, data, offset ); }
-    __forceinline void bind_and_update( const struct_wrapper & sw, const size_t offset = 0 ) const { bind(); update( sw, offset ); }
+    __forceinline void bind_and_update( const size_t byte_size, const GLvoid* const data, const size_t offset = 0 ) const { bind(); update( byte_size, data, offset ); }
+    __forceinline void bind_and_update( const struct_wrapper& sw, const size_t offset = 0 ) const { bind(); update( sw, offset ); }
 
     //   public:
     //    template<typename TData> __forceinline void send( const TData & data )

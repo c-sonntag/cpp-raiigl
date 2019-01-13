@@ -15,8 +15,12 @@ namespace raiigl {
    public:
     const GLuint id;
 
+   protected:
+    bool invalid_state = false;
+
    private:
-    __forceinline GLuint gen_vertex_array()  {
+    __forceinline GLuint gen_vertex_array()
+    {
       GLuint id;
       glGenVertexArrays( 1, &id );
       return id;
@@ -27,15 +31,25 @@ namespace raiigl {
       id( gen_vertex_array() )
     {}
 
-    ~vertex_array() {
-      glDeleteVertexArrays( 1, &id );
+    ~vertex_array()
+    {
+      if( (id > 0) && !invalid_state ) glDeleteVertexArrays( 1, &id );
+      invalid_state = true;
     }
 
    public:
-    __forceinline void bind() const  {
+    __forceinline vertex_array( vertex_array&& vao ) :
+      id( std::move( vao.id ) ),
+      invalid_state( std::move( vao.invalid_state ) )
+    { const_cast<GLuint&>( vao.id ) = 0; vao.invalid_state = true; }
+
+   public:
+    __forceinline void bind() const
+    {
       glBindVertexArray( id );
     }
-    __forceinline void unbind() const  {
+    __forceinline void unbind() const
+    {
       glBindVertexArray( 0 );
     }
 
@@ -46,10 +60,11 @@ namespace raiigl {
     //  glVertexAttribPointer( index, static_cast<GLint>(size), static_cast<GLenum>( type ), normalize_it_from_data_type, stride, pointer );
     //}
 
-    __forceinline void attrib( raiigl::buffer & buffer, const GLuint index, const uint size, const raiigl::data_type type, const bool normalize_it_from_data_type = false, const uint stride = 0, const uint buffer_decal = 0 ) const {
+    __forceinline void attrib( raiigl::buffer& buffer, const GLuint index, const uint size, const raiigl::data_type type, const bool normalize_it_from_data_type = false, const uint stride = 0, const uint buffer_decal = 0 ) const
+    {
       glEnableVertexAttribArray( index );
       buffer.bind();
-      glVertexAttribPointer( index, static_cast<GLint>( size ), static_cast<GLenum>( type ), normalize_it_from_data_type, static_cast<GLsizei>( stride ), reinterpret_cast<void *>( buffer_decal ) );
+      glVertexAttribPointer( index, static_cast<GLint>( size ), static_cast<GLenum>( type ), normalize_it_from_data_type, static_cast<GLsizei>( stride ), reinterpret_cast<void*>( buffer_decal ) );
     }
 
     __forceinline void unattrib( const GLuint index )
